@@ -21,7 +21,15 @@ pub struct VertexIndicesNormals {
     pub normals: Vec<Normal>
 }
 
-pub fn load_model(name: &str) -> VertexIndicesNormals {
+type Coordinate = (f32, f32);
+#[derive(Copy, Clone, Debug)]
+pub struct Bounds {
+    pub x: Coordinate,
+    pub y: Coordinate,
+    pub z: Coordinate
+}
+
+pub fn load_model(name: &str) -> (VertexIndicesNormals, Bounds) {
     let mut path = Search::ParentsThenKids(3, 3).for_folder("assets").unwrap();
     path.push(name);
 
@@ -45,7 +53,37 @@ pub fn load_model(name: &str) -> VertexIndicesNormals {
         normals.push(Normal{ normal: (mesh.normals[3 * i], mesh.normals[3 * i + 1], mesh.normals[3 * i + 2]) });
     }
 
+    let mut x: Coordinate = (vertices[0].position.0, vertices[0].position.0);
+    let mut y: Coordinate = (vertices[0].position.1, vertices[0].position.1);
+    let mut z: Coordinate = (vertices[0].position.2, vertices[0].position.2);
+
+    let vtx = vertices.clone();
+    for v in vtx {
+        if v.position.0 < x.0 {
+            x.0 = v.position.0;
+        }
+        if v.position.0 > x.1 {
+            x.1 = v.position.0;
+        }
+
+        if v.position.1 < y.0 {
+            y.0 = v.position.1;
+        }
+        if v.position.1 > y.1 {
+            y.1 = v.position.1;
+        }
+
+        if v.position.2 < z.0 {
+            z.0 = v.position.2;
+        }
+        if v.position.2 > z.1 {
+            z.1 = v.position.2;
+        }
+    }
+
+    let bounds = Bounds{ x: x, y: y, z: z };
+
     println!("#Vertices {}, #Indices {}, #Normals {}", vertices.len(), indices.len(), normals.len());
 
-    VertexIndicesNormals {indices: indices, normals: normals, vertices: vertices }
+    (VertexIndicesNormals {indices: indices, normals: normals, vertices: vertices }, bounds)
 }
