@@ -83,8 +83,8 @@ fn main() {
     // note: this teapot was meant for OpenGL where the origin is at the lower left
     //       instead the origin is at the upper left in vulkan, so we reverse the Y axis
     let mut proj = cgmath::perspective(cgmath::Rad(std::f32::consts::FRAC_PI_2), { dimensions[0] as f32 / dimensions[1] as f32 }, 0.01, 100.0);
-    let view = cgmath::Matrix4::look_at(cgmath::Point3::new(0.3, 0.3, 1.0), cgmath::Point3::new(0.0, 0.0, 0.0), cgmath::Vector3::new(0.0, -1.0, 0.0));
-    let scale = cgmath::Matrix4::from_scale(0.01);
+    let view = cgmath::Matrix4::look_at(cgmath::Point3::new(0.3, 0.3, 0.5), cgmath::Point3::new(0.0, 0.0, 0.0), cgmath::Vector3::new(0.0, -1.0, 0.0));
+    let scale = cgmath::Matrix4::from_scale(1.0);
 
     let uniform_buffer = vulkano::buffer::cpu_pool::CpuBufferPool::<vs::ty::Data>
                                ::new(device.clone(), vulkano::buffer::BufferUsage::all(), Some(queue.family()));
