@@ -1,0 +1,14 @@
+[package]
+authors = ["Mark Boss <markboss@mailbox.org>"]
+name = "vulkan-test"
+version = "0.1.0"
+[dependencies]
+cgmath = "0.15.0"
+find_folder = "0.3.0"
+image = "0.15.0"
+time = "0.1.38"
+tobj = "0.1.6"
+vulkano = "0.5.6"
+vulkano-shader-derive = "0.5.6"
+vulkano-win = "0.5.6"
+winit = "0.7.5"
