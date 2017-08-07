@@ -18,10 +18,13 @@ mod camera_movement;
 
 use vulkano_win::VkSurfaceBuild;
 use vulkano::sync::GpuFuture;
+use vulkano::image::ImmutableImage;
 
 use camera_movement::orbit_camera::OrbitCamera;
 use camera_movement::orbit_camera::OrbitZoomCameraSettings;
 use cgmath::Vector2;
+
+use find_folder::Search;
 
 use std::sync::Arc;
 
@@ -71,7 +74,24 @@ fn main() {
 
     let mut depth_buffer = vulkano::image::attachment::AttachmentImage::transient(device.clone(), dimensions, vulkano::format::D16Unorm).unwrap();
 
-    let (geometry, bounds) = obj_loader::load_model("stump.obj");
+    let (geometry, bounds) = obj_loader::load_model("stump.obj"); //TODO make configurable
+
+    let mut path = Search::ParentsThenKids(3, 3).for_folder("assets").unwrap();
+    let (albedo, albedo_future) = {
+        let mut albedo_path = path.clone();
+        albedo_path.push("Aset_wood_stump_M_okfch_4K_Albedo.jpg");
+        let image = image::open(&albedo_path).unwrap().to_rgba();
+        let (width, height) = (image.width(), image.height());
+        let data = image.into_raw().clone();
+
+        ImmutableImage::from_iter(
+            data.iter().cloned(),
+            vulkano::image::Dimensions::Dim2d { width: width, height: height},
+            vulkano::format::R8G8B8A8Srgb,
+            Some(queue.family()),
+            queue.clone()
+        ).unwrap()
+    };
 
     println!("bounds are: {:?}", bounds);
 
