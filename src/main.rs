@@ -19,7 +19,8 @@ mod camera_movement;
 use vulkano_win::VkSurfaceBuild;
 use vulkano::sync::GpuFuture;
 
-use camera_movement::OrbitCamera;
+use camera_movement::orbit_camera::OrbitCamera;
+use camera_movement::orbit_camera::OrbitZoomCameraSettings;
 use cgmath::Vector2;
 
 use std::sync::Arc;
@@ -89,7 +90,7 @@ fn main() {
     // note: this teapot was meant for OpenGL where the origin is at the lower left
     //       instead the origin is at the upper left in vulkan, so we reverse the Y axis
     let mut proj = cgmath::perspective(cgmath::Rad(std::f32::consts::FRAC_PI_2), { dimensions[0] as f32 / dimensions[1] as f32 }, 0.01, 100.0);
-    let mut view = cgmath::Matrix4::look_at(
+    let view = cgmath::Matrix4::look_at(
         cgmath::Point3::new((bounds.x.1 - bounds.x.0) / 2.0, (bounds.y.1 - bounds.y.0) / 2.0, bounds.z.1 + (bounds.z.1 - bounds.z.0) / 5.0),
         cgmath::Point3::new(0.0, 0.0, 0.0),
         cgmath::Vector3::new(0.0, -1.0, 0.0));
@@ -139,9 +140,8 @@ fn main() {
     let mut recreate_swapchain = false;
 
     let mut previous_frame = Box::new(vulkano::sync::now(device.clone())) as Box<GpuFuture>;
-    let rotation_start = std::time::Instant::now();
 
-    let mut camera: OrbitCamera<f32> = OrbitCamera::new();
+    let mut camera: OrbitCamera<f32> = OrbitCamera::new(OrbitZoomCameraSettings::default());
 
     let mut mouse_coords = Vector2::new(0.0f32, 0.0f32);
 
@@ -219,7 +219,7 @@ fn main() {
 
         let uniform_buffer_subbuffer = {
             let uniform_data = vs::ty::Data {
-                world: camera.get_transform_mat().into(),
+                world: camera.camera().orthogonal().into(),
                 view: (view * scale).into(),
                 proj: proj.into(),
             };
