@@ -14,9 +14,13 @@ extern crate find_folder;
 extern crate image;
 
 mod obj_loader;
+mod camera_movement;
 
 use vulkano_win::VkSurfaceBuild;
 use vulkano::sync::GpuFuture;
+
+use camera_movement::OrbitCamera;
+use cgmath::Vector2;
 
 use std::sync::Arc;
 
@@ -85,7 +89,7 @@ fn main() {
     // note: this teapot was meant for OpenGL where the origin is at the lower left
     //       instead the origin is at the upper left in vulkan, so we reverse the Y axis
     let mut proj = cgmath::perspective(cgmath::Rad(std::f32::consts::FRAC_PI_2), { dimensions[0] as f32 / dimensions[1] as f32 }, 0.01, 100.0);
-    let view = cgmath::Matrix4::look_at(
+    let mut view = cgmath::Matrix4::look_at(
         cgmath::Point3::new((bounds.x.1 - bounds.x.0) / 2.0, (bounds.y.1 - bounds.y.0) / 2.0, bounds.z.1 + (bounds.z.1 - bounds.z.0) / 5.0),
         cgmath::Point3::new(0.0, 0.0, 0.0),
         cgmath::Vector3::new(0.0, -1.0, 0.0));
@@ -137,8 +141,44 @@ fn main() {
     let mut previous_frame = Box::new(vulkano::sync::now(device.clone())) as Box<GpuFuture>;
     let rotation_start = std::time::Instant::now();
 
+    let mut camera: OrbitCamera<f32> = OrbitCamera::new();
+
+    let mut mouse_coords = Vector2::new(0.0f32, 0.0f32);
+
     loop {
         previous_frame.cleanup_finished();
+
+        let mut done = false;
+        events_loop.poll_events(|ev| {
+            match ev {
+                winit::Event::WindowEvent { event, .. } => {
+                    match event {
+                        winit::WindowEvent::Closed => done = true,
+                        winit::WindowEvent::MouseInput { state, button, .. } => match state {
+                            winit::ElementState::Pressed => match button {
+                                winit::MouseButton::Left => camera.rotate_start(mouse_coords),
+                                winit::MouseButton::Middle => camera.zoom_start(mouse_coords),
+                                winit::MouseButton::Right => camera.pan_start(mouse_coords),
+                                _ => ()
+                            },
+                            winit::ElementState::Released => match button {
+                                winit::MouseButton::Left => camera.rotate_end(),
+                                winit::MouseButton::Middle => camera.zoom_end(),
+                                winit::MouseButton::Right => camera.pan_end(),
+                                _ => ()
+                            }
+                        },
+                        winit::WindowEvent::MouseMoved { position: (x, y), .. } => {
+                            mouse_coords.x = x as f32;
+                            mouse_coords.y = y as f32;
+                            camera.update(mouse_coords);
+                        },
+                        _ => ()
+                    }
+                },
+                _ => ()
+            }
+        });
 
         if recreate_swapchain {
             dimensions = {
@@ -178,12 +218,8 @@ fn main() {
         }
 
         let uniform_buffer_subbuffer = {
-            let elapsed = rotation_start.elapsed();
-            let rotation = elapsed.as_secs() as f64 + elapsed.subsec_nanos() as f64 / 1_000_000_000.0;
-            let rotation = cgmath::Matrix3::from_angle_y(cgmath::Rad(rotation as f32));
-
             let uniform_data = vs::ty::Data {
-                world: cgmath::Matrix4::from(rotation).into(),
+                world: camera.get_transform_mat().into(),
                 view: (view * scale).into(),
                 proj: proj.into(),
             };
@@ -235,13 +271,6 @@ fn main() {
             .then_signal_fence_and_flush().unwrap();
         previous_frame = Box::new(future) as Box<_>;
 
-        let mut done = false;
-        events_loop.poll_events(|ev| {
-            match ev {
-                winit::Event::WindowEvent { event: winit::WindowEvent::Closed, .. } => done = true,
-                _ => ()
-            }
-        });
         if done { return; }
     }
 }
