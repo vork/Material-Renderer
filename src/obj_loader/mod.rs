@@ -15,12 +15,6 @@ pub struct Normal {
 
 impl_vertex!(Normal, normal);
 
-pub struct VertexIndicesNormals {
-    pub vertices: Vec<Vertex>,
-    pub indices: Vec<u32>,
-    pub normals: Vec<Normal>
-}
-
 type Coordinate = (f32, f32);
 #[derive(Copy, Clone, Debug)]
 pub struct Bounds {
@@ -29,7 +23,14 @@ pub struct Bounds {
     pub z: Coordinate
 }
 
-pub fn load_model(name: &str) -> (VertexIndicesNormals, Bounds) {
+pub struct Model {
+    pub vertices: Vec<Vertex>,
+    pub indices: Vec<u32>,
+    pub normals: Vec<Normal>,
+    pub bounds: Bounds,
+}
+
+pub fn load_model(name: &str) -> Model {
     let mut path = Search::ParentsThenKids(3, 3).for_folder("assets").unwrap();
     path.push(name);
 
@@ -85,5 +86,5 @@ pub fn load_model(name: &str) -> (VertexIndicesNormals, Bounds) {
 
     println!("#Vertices {}, #Indices {}, #Normals {}", vertices.len(), indices.len(), normals.len());
 
-    (VertexIndicesNormals {indices: indices, normals: normals, vertices: vertices }, bounds)
+    Model {indices: indices, normals: normals, vertices: vertices, bounds}
 }
