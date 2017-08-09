@@ -16,8 +16,8 @@ impl<T: cgmath::BaseFloat> OrbitZoomCameraSettings<T> {
         OrbitZoomCameraSettings {
             orbit_speed: T::from(0.05f32).unwrap(),
             pitch_speed: T::from(0.1f32).unwrap(),
-            pan_speed: T::from(0.1f32).unwrap(),
-            zoom_speed: T::from(0.1f32).unwrap(),
+            pan_speed: T::from(0.01f32).unwrap(),
+            zoom_speed: T::from(0.01f32).unwrap(),
         }
     }
 
